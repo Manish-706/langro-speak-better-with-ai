@@ -109,8 +109,7 @@ export function CallScreen({ roomId, partnerName }: CallScreenProps) {
     userId,
     partnerId,
     isCallConnected: isConnected,
-    localStream,
-    remoteStream
+    localStream
   });
 
   // Quick simulate partner prompt for instant verification
