@@ -1,0 +1,1 @@
+export default function AiCharactersPage() { return null; }

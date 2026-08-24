@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Speech Recognition & MediaStream Test</title>
+</head>
+<body style="font-family: sans-serif; padding: 20px;">
+  <h2>Chrome Web Speech API Diagnostic Test</h2>
+  <button id="btn-stt" style="padding: 10px 20px; font-size: 16px;">1. Start SpeechRecognition Solo</button>
+  <button id="btn-mic" style="padding: 10px 20px; font-size: 16px;">2. Get UserMedia (Mic)</button>
+  <button id="btn-both" style="padding: 10px 20px; font-size: 16px;">3. Start Both (getUserMedia + SpeechRecognition)</button>
+  <div id="logs" style="margin-top: 20px; background: #222; color: #0f0; padding: 15px; font-family: monospace; white-space: pre-wrap; height: 400px; overflow-y: scroll;"></div>
+
+  <script>
+    const logDiv = document.getElementById('logs');
+    function log(msg) {
+      console.log(msg);
+      logDiv.textContent += new Date().toISOString().substring(11, 19) + ' ' + msg + '\n';
+      logDiv.scrollTop = logDiv.scrollHeight;
+    }
+
+    const SpeechConstructor = window.SpeechRecognition || window.webkitSpeechRecognition;
+    log('Web Speech API supported: ' + !!SpeechConstructor);
+
+    let activeRec = null;
+
+    function testSpeech(label) {
+      if (activeRec) {
+        try { activeRec.abort(); } catch(e){}
+        activeRec = null;
+      }
+
+      if (!SpeechConstructor) {
+        log('ERROR: SpeechRecognition not supported');
+        return;
+      }
+
+      const rec = new SpeechConstructor();
+      rec.continuous = true;
+      rec.interimResults = true;
+      rec.lang = 'en-US';
+
+      rec.onaudiostart = () => log('[' + label + '] onaudiostart: Audio capture started');
+      rec.onsoundstart = () => log('[' + label + '] onsoundstart: Sound detected');
+      rec.onspeechstart = () => log('[' + label + '] onspeechstart: Speech detected');
+      rec.onspeechend = () => log('[' + label + '] onspeechend: Speech ended');
+      rec.onaudioend = () => log('[' + label + '] onaudioend: Audio stream closed');
+      rec.onnomatch = () => log('[' + label + '] onnomatch: No match');
+      rec.onerror = (e) => log('[' + label + '] onerror: ' + e.error + ' - ' + (e.message || ''));
+      rec.onend = () => log('[' + label + '] onend: Session ended');
+      rec.onresult = (e) => {
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+          const item = e.results[i];
+          log('[' + label + '] onresult (' + (item.isFinal ? 'FINAL' : 'interim') + '): "' + item[0].transcript + '"');
+        }
+      };
+
+      activeRec = rec;
+      try {
+        rec.start();
+        log('[' + label + '] rec.start() invoked');
+      } catch (err) {
+        log('[' + label + '] rec.start() error: ' + err.message);
+      }
+    }
+
+    document.getElementById('btn-stt').onclick = () => {
+      log('--- Test 1: SpeechRecognition Solo ---');
+      testSpeech('Solo');
+    };
+
+    document.getElementById('btn-mic').onclick = async () => {
+      log('--- Test 2: Requesting getUserMedia ---');
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+        log('getUserMedia SUCCESS! Tracks: ' + stream.getTracks().map(t => t.kind).join(', '));
+      } catch (e) {
+        log('getUserMedia FAILED: ' + e.message);
+      }
+    };
+
+    document.getElementById('btn-both').onclick = async () => {
+      log('--- Test 3: getUserMedia + SpeechRecognition ---');
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+        log('getUserMedia SUCCESS! Tracks: ' + stream.getTracks().map(t => t.kind).join(', '));
+        testSpeech('WithMedia');
+      } catch (e) {
+        log('getUserMedia FAILED: ' + e.message);
+      }
+    };
+  </script>
+</body>
+</html>

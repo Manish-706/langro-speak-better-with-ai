@@ -1,0 +1,1 @@
+export default function AiTeacherPage() { return null; }
