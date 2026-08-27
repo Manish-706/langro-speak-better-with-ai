@@ -22,7 +22,7 @@ export function useAiHelper({
 }: UseAiHelperOptions) {
   const store = useAiHelperStore();
   const socketRef = useRef<Socket>(getSocket());
-  const socket = socketRef.current;
+  const socket = socketRef.current;//
 
   const sequenceRef = useRef(0);
   const enabledCallIdRef = useRef<string | null>(null);
