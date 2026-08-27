@@ -1,13 +1,43 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { AiSession, AiState } from './ai-session.types';
 
+/** Sessions older than this with no active state are evicted by the TTL sweep. */
+const SESSION_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours
+/** How often the TTL sweep runs. */
+const CLEANUP_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+
 @Injectable()
-export class AiSessionService {
+export class AiSessionService implements OnModuleDestroy {
   private readonly logger = new Logger(AiSessionService.name);
   private readonly sessions = new Map<string, AiSession>();
+  private readonly cleanupInterval: ReturnType<typeof setInterval>;
 
   private getKey(callId: string, userId: string): string {
     return `${callId}:${userId}`;
+  }
+
+  constructor() {
+    // Fix #10: periodically evict sessions that were never cleaned up due to
+    // abnormal terminations (browser crash, server restart mid-call, etc.).
+    this.cleanupInterval = setInterval(() => this.evictStaleSessions(), CLEANUP_INTERVAL_MS);
+  }
+
+  onModuleDestroy(): void {
+    clearInterval(this.cleanupInterval);
+  }
+
+  private evictStaleSessions(): void {
+    const now = Date.now();
+    let evicted = 0;
+    for (const [key, session] of this.sessions.entries()) {
+      if (now - session.createdAt > SESSION_TTL_MS) {
+        this.sessions.delete(key);
+        evicted++;
+      }
+    }
+    if (evicted > 0) {
+      this.logger.warn(`TTL sweep evicted ${evicted} stale AI session(s)`);
+    }
   }
 
   createSession(

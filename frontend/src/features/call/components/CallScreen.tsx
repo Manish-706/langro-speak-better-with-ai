@@ -107,7 +107,6 @@ export function CallScreen({ roomId, partnerName }: CallScreenProps) {
   } = useAiHelper({
     roomId,
     userId,
-    partnerId,
     isCallConnected: isConnected,
     localStream
   });

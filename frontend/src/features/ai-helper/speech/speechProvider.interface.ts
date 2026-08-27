@@ -13,13 +13,14 @@ export interface SpeechRecognitionOptions {
   language?: string;
   continuous?: boolean;
   interimResults?: boolean;
+  callId?: string;
 }
 
 export interface SpeechProvider {
   isSupported(): boolean;
 
   start(
-    audioTrack?: MediaStreamTrack,
+    audioSource?: MediaStreamTrack | MediaStream | null,
     options?: SpeechRecognitionOptions,
   ): void;
 

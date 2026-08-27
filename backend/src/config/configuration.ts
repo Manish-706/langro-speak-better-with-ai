@@ -10,7 +10,8 @@ export default () => ({
   cookieSecure: process.env.COOKIE_SECURE === 'true',
   redisUrl: process.env.REDIS_URL || 'redis://localhost:6379',
   geminiApiKey: process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY || '',
+  deepgramApiKey: process.env.DEEPGRAM_API_KEY || '',
   stun: {
     urls: (process.env.STUN_URLS || 'stun:stun.l.google.com:19302').split(',').map(s => s.trim()),
   },
-});
+}); 
